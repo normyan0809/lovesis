@@ -72,11 +72,20 @@ export function ParticleCanvas({ themeId }: ParticleCanvasProps) {
         
         ctx.globalCompositeOperation = theme.globalCompositeOperation || 'source-over';
         
-        // Spawn interactive particles on pointer move/down
-        if (pointer.isDown || pointer.isMoving) {
-            const spawnCount = theme.spawnOnPointerMove || 2;
-            for(let i = 0; i < spawnCount; i++) {
-                particles.push(theme.createParticle(width, height, true, pointer.x, pointer.y));
+        // Spawn interactive particles on pointer move/down safely
+        let interactiveCount = 0;
+        for (let i = 0; i < particles.length; i++) {
+            if (particles[i].isInteractive) interactiveCount++;
+        }
+
+        if ((pointer.isDown || pointer.isMoving) && interactiveCount < 300) {
+            // Spawn less if just holding down without moving
+            const spawnRate = pointer.isMoving ? 1 : 0.2;
+            if (Math.random() < spawnRate) {
+                const spawnCount = theme.spawnOnPointerMove || 2;
+                for(let i = 0; i < spawnCount; i++) {
+                    particles.push(theme.createParticle(width, height, true, pointer.x, pointer.y));
+                }
             }
             pointer.isMoving = false; // Reset burst flag
         }

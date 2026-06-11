@@ -21,9 +21,11 @@ const availableThemes = [
 export default function App() {
   const [currentTheme, setCurrentTheme] = useState('crimson');
 
-  const springConfig = { stiffness: 80, damping: 15 };
+  const springConfig = { stiffness: 60, damping: 20 };
   const textX = useSpring(0, springConfig);
   const textY = useSpring(0, springConfig);
+  const textRotateX = useSpring(0, springConfig);
+  const textRotateY = useSpring(0, springConfig);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -46,29 +48,29 @@ export default function App() {
       const cx = w / 2;
       const cy = h / 2;
       
-      // Floating base effect (figure 8)
-      let targetX = Math.sin(time) * 15;
-      let targetY = Math.sin(time * 2) * 8;
-      
-      const dx = pointer.x - cx;
-      const dy = pointer.y - cy;
-      const distToCenter = Math.sqrt(dx * dx + dy * dy);
+      // Floating base effect gently
+      let targetX = Math.sin(time) * 10;
+      let targetY = Math.sin(time * 2) * 5;
+      let targetRotX = 0;
+      let targetRotY = 0;
       
       if (pointer.x !== -1000) {
-        // Parallax offset
-        targetX += -dx * 0.05;
-        targetY += -dy * 0.05;
+        const dx = pointer.x - cx;
+        const dy = pointer.y - cy;
         
-        // Repulsion if too close to center
-        if (distToCenter < 120) {
-           const repelStrength = (120 - distToCenter) / 120;
-           targetX -= dx * repelStrength * 0.5;
-           targetY -= dy * repelStrength * 0.5;
-        }
+        // Gentle parallax (move slightly opposite to cursor)
+        targetX -= dx * 0.03;
+        targetY -= dy * 0.03;
+        
+        // Tilt effect (look towards cursor gently)
+        targetRotX = -(dy / h) * 30; 
+        targetRotY = (dx / w) * 30;
       }
       
       textX.set(targetX);
       textY.set(targetY);
+      textRotateX.set(targetRotX);
+      textRotateY.set(targetRotY);
       
       animationFrameId = requestAnimationFrame(animate);
     };
@@ -79,17 +81,17 @@ export default function App() {
       window.removeEventListener('pointermove', handleMove);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [textX, textY]);
+  }, [textX, textY, textRotateX, textRotateY]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col justify-center items-center font-sans touch-none">
+    <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col justify-center items-center font-sans touch-none" style={{ perspective: 1000 }}>
       
       {/* Background Interactive Canvas Layer */}
       <ParticleCanvas themeId={currentTheme} />
       
       {/* Central Interactive Text Layer */}
       <motion.div 
-        style={{ x: textX, y: textY }}
+        style={{ x: textX, y: textY, rotateX: textRotateX, rotateY: textRotateY }}
         className="absolute z-10 pointer-events-none tracking-[0.2em] select-none text-center px-4 flex flex-col items-center"
       >
         <h1 
@@ -110,21 +112,23 @@ export default function App() {
       </motion.div>
 
       {/* Theme Controls */}
-      <div className="absolute bottom-8 z-20 flex gap-2 md:gap-4 flex-wrap justify-center items-center bg-white/10 backdrop-blur-md p-2 md:p-3 rounded-full border border-white/20 shadow-xl max-w-[90vw]">
-        {availableThemes.map(theme => (
-          <button
-            key={theme.id}
-            onClick={() => setCurrentTheme(theme.id)}
-            className={`p-3 md:p-4 rounded-full transition-all duration-500 ease-out flex items-center justify-center cursor-pointer shrink-0 pointer-events-auto
-              ${currentTheme === theme.id 
-                ? 'bg-white/90 text-black scale-110 shadow-[0_0_20px_rgba(255,255,255,0.5)]' 
-                : 'text-white/70 hover:bg-white/20 hover:text-white hover:scale-105'}`}
-            title={theme.name}
-            aria-label={theme.name}
-          >
-            {theme.icon}
-          </button>
-        ))}
+      <div className="absolute bottom-6 sm:bottom-12 z-20 w-full flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none">
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 bg-white/10 backdrop-blur-md p-3 rounded-[2rem] sm:rounded-full border border-white/20 shadow-xl max-w-[260px] sm:max-w-none pointer-events-auto">
+          {availableThemes.map(theme => (
+            <button
+              key={theme.id}
+              onClick={() => setCurrentTheme(theme.id)}
+              className={`p-3 sm:p-4 rounded-full transition-all duration-500 ease-out flex items-center justify-center shrink-0 w-11 h-11 sm:w-14 sm:h-14
+                ${currentTheme === theme.id 
+                  ? 'bg-white/90 text-black scale-110 shadow-[0_0_20px_rgba(255,255,255,0.5)]' 
+                  : 'text-white/70 hover:bg-white/20 hover:text-white hover:scale-105'}`}
+              title={theme.name}
+              aria-label={theme.name}
+            >
+              {theme.icon}
+            </button>
+          ))}
+        </div>
       </div>
       
     </div>
