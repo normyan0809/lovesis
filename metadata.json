@@ -1,0 +1,6 @@
+{
+  "name": "我爱姐姐",
+  "description": "A beautiful interactive particle effect love letter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
